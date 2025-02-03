@@ -10,7 +10,7 @@ app.use(cors({ origin: "*" }));
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:8080", "http://127.0.0.1:8080"], // Allow both origins
+    origin: ["http://localhost:8080", "http://127.0.0.1:8080", "https://air-hockey-frontend.vercel.app"], // Allow both origins
     methods: ["GET", "POST"],
   },
 });
