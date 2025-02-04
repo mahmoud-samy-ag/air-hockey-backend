@@ -10,14 +10,11 @@ app.use(cors({ origin: "*" }));
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:8080",
-      "http://127.0.0.1:8080",
-      "https://air-hockey-frontend.vercel.app",
-    ], // Allow both origins
-    methods: ["GET", "POST"],
-  },
+      origin: "*", // Allow all origins for testing
+      methods: ["GET", "POST"]
+  }
 });
+
 
 const activeRooms = {};
 
@@ -71,7 +68,10 @@ io.on("connection", (socket) => {
   // Add to socket.io connection handler
   socket.on("puckUpdate", (data) => {
     const rooms = Array.from(socket.rooms);
-    io.to(rooms[1]).emit("puckSync", data);
+    if (rooms.length > 1) {
+      // Broadcast to all in the room including sender
+      io.to(rooms[1]).emit("puckSync", data);
+    }
   });
 
   socket.on("scoreUpdate", (scores) => {
