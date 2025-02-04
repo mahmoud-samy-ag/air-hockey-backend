@@ -71,10 +71,7 @@ io.on("connection", (socket) => {
   // Add to socket.io connection handler
   socket.on("puckUpdate", (data) => {
     const rooms = Array.from(socket.rooms);
-    if (rooms.length > 1) {
-      // Broadcast to all in the room including sender
-      io.to(rooms[1]).emit("puckSync", data);
-    }
+    io.to(rooms[1]).emit("puckSync", data);
   });
 
   socket.on("scoreUpdate", (scores) => {
