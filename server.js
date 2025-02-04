@@ -10,7 +10,11 @@ app.use(cors({ origin: "*" }));
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:8080", "http://127.0.0.1:8080", "https://air-hockey-frontend.vercel.app"], // Allow both origins
+    origin: [
+      "http://localhost:8080",
+      "http://127.0.0.1:8080",
+      "https://air-hockey-frontend.vercel.app",
+    ], // Allow both origins
     methods: ["GET", "POST"],
   },
 });
@@ -20,36 +24,41 @@ const activeRooms = {};
 io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
-  // Find first available room with 1 player
-  let roomFound = null;
-  for (const [roomId, room] of Object.entries(activeRooms)) {
-    if (room.playerCount === 1) {
-      roomFound = roomId;
-      break;
+  socket.on("createRoom", (data) => {
+    const { room_id } = data;
+    const player_number = Number(data.player_number) || 1; 
+
+     // Extract room ID and player number from the frontend
+    console.log("Received room creation request:", data);
+
+    if (!(room_id && activeRooms[room_id])) {
+      // Create a new room if the provided room_id doesn't exist
+      const newRoomId = room_id || `room_${Date.now()}`;
+      activeRooms[newRoomId] = {
+        players: [socket.id],
+        playerCount: 1,
+      };
+      socket.join(newRoomId);
+      socket.emit("playerNumber",  player_number || 1); // Default to 1 if not specified
+      console.log(
+        `Createdss new room ${newRoomId} with Player ${ player_number || 1}`
+      );
+    } else {
+      // Room already exists, add the player as Player 2
+      activeRooms[room_id].players.push(socket.id);
+      activeRooms[room_id].playerCount++;
+      socket.join(room_id);
+      socket.emit("playerNumber", player_number || 2); // Default to 2 if not specified
+      io.to(room_id).emit("gameStart");
+      console.log(
+        `Player ${player_number || 2} joined existing room ${room_id}`
+      );
+
+      // Send initial state to the first player
+      const firstPlayer = activeRooms[room_id].players[0];
+      io.to(firstPlayer).emit("requestInitialState");
     }
-  }
-
-  if (!roomFound) {
-    const newRoomId = `room_${Date.now()}`;
-    activeRooms[newRoomId] = {
-      players: [socket.id],
-      playerCount: 1,
-    };
-    socket.join(newRoomId);
-    socket.emit("playerNumber", 1);
-    console.log(`Created new room ${newRoomId}`);
-  } else {
-    activeRooms[roomFound].players.push(socket.id);
-    activeRooms[roomFound].playerCount++;
-    socket.join(roomFound);
-    socket.emit("playerNumber", 2);
-    io.to(roomFound).emit("gameStart");
-    console.log(`Added to room ${roomFound}`);
-
-    // Send initial state to second player
-    const firstPlayer = activeRooms[roomFound].players[0];
-    io.to(firstPlayer).emit("requestInitialState");
-  }
+  });
 
   // Update player movement handler
   socket.on("playerMove", (data) => {
@@ -68,6 +77,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("scoreUpdate", (scores) => {
+    console.log("Score update:", scores);
     const rooms = Array.from(socket.rooms);
     if (rooms.length > 1) {
       io.to(rooms[1]).emit("scoreSync", scores);
@@ -117,18 +127,3 @@ io.on("connection", (socket) => {
 server.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
