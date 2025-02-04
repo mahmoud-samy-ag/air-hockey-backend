@@ -72,7 +72,8 @@ io.on("connection", (socket) => {
   socket.on("puckUpdate", (data) => {
     const rooms = Array.from(socket.rooms);
     if (rooms.length > 1) {
-      socket.to(rooms[1]).emit("puckSync", data);
+      // Broadcast to all in the room including sender
+      io.to(rooms[1]).emit("puckSync", data);
     }
   });
 
