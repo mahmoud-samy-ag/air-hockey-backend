@@ -72,9 +72,16 @@ io.on("connection", (socket) => {
   socket.on("puckUpdate", (data) => {
     const rooms = Array.from(socket.rooms);
     if (rooms.length > 1) {
-      socket.to(rooms[1]).emit("puckSync", data);
+      io.to(rooms[1]).emit("puckSync", {
+        x: data.x,
+        y: data.y,
+        velocityX: data.velocityX,
+        velocityY: data.velocityY,
+        timestamp: Date.now(), // Add a timestamp to track delays
+      });
     }
   });
+  
 
   socket.on("scoreUpdate", (scores) => {
     console.log("Score update:", scores);
