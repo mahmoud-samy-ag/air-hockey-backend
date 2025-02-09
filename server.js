@@ -24,11 +24,16 @@ const activeRooms = {};
 io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
+  // Ping-pong mechanism for measuring latency
+  socket.on("pingRequest", (clientTime) => {
+    socket.emit("pongResponse", clientTime);
+  });
+
   socket.on("createRoom", (data) => {
     const { room_id } = data;
-    const player_number = Number(data.player_number) || 1; 
+    const player_number = Number(data.player_number) || 1;
 
-     // Extract room ID and player number from the frontend
+    // Extract room ID and player number from the frontend
     console.log("Received room creation request:", data);
 
     if (!(room_id && activeRooms[room_id])) {
@@ -39,9 +44,9 @@ io.on("connection", (socket) => {
         playerCount: 1,
       };
       socket.join(newRoomId);
-      socket.emit("playerNumber",  player_number || 1); // Default to 1 if not specified
+      socket.emit("playerNumber", player_number || 1); // Default to 1 if not specified
       console.log(
-        `Createdss new room ${newRoomId} with Player ${ player_number || 1}`
+        `Createdss new room ${newRoomId} with Player ${player_number || 1}`
       );
     } else {
       // Room already exists, add the player as Player 2
@@ -81,7 +86,6 @@ io.on("connection", (socket) => {
       });
     }
   });
-  
 
   socket.on("scoreUpdate", (scores) => {
     console.log("Score update:", scores);
